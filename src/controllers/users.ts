@@ -8,7 +8,7 @@ export const getAllUsers = async (
   try {
     const users = await getUsers();
 
-    return res.status(200).json(users).send({ message: "User not found" });
+    return res.status(200).json(users)
   } catch (error) {
     console.log(error);
     return res.status(400);
