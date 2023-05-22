@@ -1,5 +1,6 @@
 import express from "express";
 import { deleteUserById, getUserById, getUsers } from "../db/users";
+import { validateUserUpdate } from "../validation/user.validation";
 
 export const getAllUsers = async (
   req: express.Request,
@@ -8,43 +9,55 @@ export const getAllUsers = async (
   try {
     const users = await getUsers();
 
-    return res.status(200).json(users)
+    return res.status(200).json(users);
   } catch (error) {
     console.log(error);
     return res.status(400);
   }
 };
 
-export const deleteUser = async (req: express.Request, res: express.Response) => {
-   try{
+export const deleteUser = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
     const { id } = req.params;
 
     const deletedUser = await deleteUserById(id);
 
-     return res.json(deletedUser)
-   } catch(error){
-       console.log(error);
-       return res.status(400);
-   }
+    return res.json(deletedUser);
+  } catch (error) {
+    console.log(error);
+    return res.status(400);
+  }
 };
 
-export const updateUser = async (req: express.Request, res: express.Response) => {
-    try{
-        const { id } = req.params;
-        const { username } = req.body;
+export const updateUser = async (
+  req: express.Request,
+  res: express.Response
+) => {
+  try {
+    const { id } = req.params;
+    const { username } = req.body;
 
-        if(!username){
-            return res.status(400)
-        }
+    const { is_validated, status, message } = validateUserUpdate(req.body);
+    if (is_validated === false) return res.status(status).send({ message });
 
-        const user = await getUserById(id);
-        user.username = username;
-        await user.save();
-
-        return res.status(200).json(user).end();
-
-    } catch(error){
-        console.log(error);
-        return res.status(400);
+    if (!username) {
+      return res.status(400);
     }
-}
+
+    let user: any = await getUserById(id);
+
+    Object.keys(req.body).forEach((key: string) => {
+      user[key] = req.body[key];
+    });
+
+    await user.save();
+
+    return res.status(200).json(user).end();
+  } catch (error) {
+    console.log(error);
+    return res.status(400);
+  }
+};
